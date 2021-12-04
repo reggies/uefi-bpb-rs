@@ -1,0 +1,17 @@
+[package]
+name = "uefi-bpb-dxe"
+version = "0.1.0"
+edition = "2018"
+license = "MIT"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[dependencies]
+uefi = { git = "ssh://git@github.com/reggies/uefi-rs", features = ['exts', 'logger', 'alloc'] }
+uefi-services = { git = "ssh://git@github.com/reggies/uefi-rs" }
+uefi-macros = { git = "ssh://git@github.com/reggies/uefi-rs" }
+log = { version = "0.4.11", default-features = false }

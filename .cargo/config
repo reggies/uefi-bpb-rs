@@ -1,0 +1,17 @@
+[build]
+target = "x86_64-unknown-uefi"
+# rustflags = ["-Z", "pre-link-args=/subsystem:efi_runtime_driver"]
+
+[unstable]
+build-std = ["core", "compiler_builtins", "alloc"]
+build-std-features = ["compiler-builtins-mem"]
+
+[patch.crates-io]
+uefi = { path = "/home/reggies/uefi-rs", features = ['exts', 'logger', 'alloc'] }
+uefi-macros = { path = "/home/reggies/uefi-rs/uefi-macros" }
+uefi-services = { path = "/home/reggies/uefi-rs/uefi-services" }
+
+[patch."ssh://git@github.com/reggies/uefi-rs"]
+uefi = { path = "/home/reggies/uefi-rs", features = ['exts', 'logger', 'alloc'] }
+uefi-macros = { path = "/home/reggies/uefi-rs/uefi-macros" }
+uefi-services = { path = "/home/reggies/uefi-rs/uefi-services" }
