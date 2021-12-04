@@ -5,17 +5,20 @@
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
 #pragma alloc_text (PAGE, MyUnload)
-#pragma alloc_text (PAGE, MyPnP)
+#pragma alloc_text (PAGE, MyDispatchPnp)
 #pragma alloc_text (PAGE, MyAddDevice)
 #endif
 
 NTSTATUS
-MyDispatchPnP (
+MyDispatchPnp (
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp
     )
 {
-    DbgPrint("MyDispatchPnP" );
+	UNREFERENCED_PARAMETER(Irp);
+	UNREFERENCED_PARAMETER(DeviceObject);
+
+    DbgPrint("MyDispatchPnp" );
 
     return STATUS_SUCCESS;
 }
@@ -81,6 +84,8 @@ MyUnload (
     IN PDRIVER_OBJECT DriverObject
     )
 {
+	UNREFERENCED_PARAMETER(DriverObject);
+
     DbgPrint("MyUnload");
 }
 
@@ -91,11 +96,14 @@ CheckMyPage (
 {
     PVOID SystemAddress;
     ULONG ProbeBytes;
+	PHYSICAL_ADDRESS liPhysicalAddress;
 
     DbgPrint("CheckMyPage");
 
+	liPhysicalAddress.QuadPart = MY_PHYS_ADDRESS;
+
     SystemAddress = MmMapIoSpace (
-        0x10000,
+        liPhysicalAddress,
         4096,
         MmNonCached
         );
@@ -125,6 +133,8 @@ SetupRootDevice (
 {
     // NTSTATUS Status;
     // PDEVICE_OBJECT DeviceObject;
+
+	UNREFERENCED_PARAMETER(DriverObject);
 
     // Create root device to initiate memory region detection
     // Status = IoCreateDevice(
@@ -167,7 +177,6 @@ TryLegacyDeviceDetection (
     CM_PARTIAL_RESOURCE_DESCRIPTOR ResourceDescriptor;
     BOOLEAN fPageDetected;
     PDEVICE_OBJECT DeviceObject;
-
     
     // For IoReportResourceForDetection we must report
     // untranslated resource list
@@ -175,7 +184,7 @@ TryLegacyDeviceDetection (
     ResourceDescriptor.Type = CmResourceTypeMemory;
     ResourceDescriptor.ShareDisposition = CmResourceShareDeviceExclusive;
     ResourceDescriptor.Flags = CM_RESOURCE_MEMORY_READ_WRITE;
-    ResourceDescriptor.u.Memory.Start = 0x10000;
+    ResourceDescriptor.u.Memory.Start.QuadPart = MY_PHYS_ADDRESS;
     ResourceDescriptor.u.Memory.Length = 4096;
 
     RtlZeroMemory(&ResourceList, sizeof(CM_RESOURCE_LIST));
@@ -185,11 +194,14 @@ TryLegacyDeviceDetection (
     ResourceList.List[0].PartialResourceList.Count = 1;
     ResourceList.List[0].PartialResourceList.PartialDescriptors[0] = ResourceDescriptor;
 
+    // For majority of fixed physical addresses we got a
+    // confict.
     Status = IoReportResourceForDetection(
         DriverObject,
         &ResourceList,
         sizeof(CM_RESOURCE_LIST),
         NULL,
+		NULL,
         0,
         &fConflictDetected
         );
@@ -213,7 +225,7 @@ TryLegacyDeviceDetection (
         (ULONG) -1,                                      // BusNumber
         (ULONG) -1,                                      // SlotNumber
         &ResourceList,
-        &ResourceList,
+        NULL,
         fPageDetected,
         &DeviceObject
         );
@@ -225,7 +237,7 @@ TryLegacyDeviceDetection (
 
     DbgPrint("Detected DeviceObject is %p", DeviceObject);
 
-    IoDeleteObject(DeviceObject);
+    IoDeleteDevice(DeviceObject);
 
     return STATUS_SUCCESS;
 }
@@ -236,7 +248,6 @@ DriverEntry (
     IN PUNICODE_STRING RegistryPath
     )
 {
-    NTSTATUS Status;
     ULONG Index;
 
     UNREFERENCED_PARAMETER(RegistryPath);
@@ -248,9 +259,9 @@ DriverEntry (
         DriverObject->MajorFunction[Index] = MyDispatchPassThrough;
     }
 
-    DriverObject->MajorFunction [IRP_MJ_PNP] = MyDispatchPnP;
+    // DriverObject->MajorFunction [IRP_MJ_PNP] = MyDispatchPnp;
     DriverObject->DriverUnload = MyUnload;
-    DriverObject->DriverExtension->AddDevice = MyAddDevice;
+    // DriverObject->DriverExtension->AddDevice = MyAddDevice;
 
     CheckMyPage();
 

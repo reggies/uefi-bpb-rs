@@ -1,6 +1,8 @@
 #ifndef BPB_H_
 #define BPB_H_
 
+#define MY_PHYS_ADDRESS 0x1000000
+
 DRIVER_INITIALIZE DriverEntry;
 
 DRIVER_UNLOAD MyUnload;
