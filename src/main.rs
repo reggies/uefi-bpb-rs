@@ -20,6 +20,9 @@ use core::fmt;
 use core::ffi::c_void;
 use uefi::proto::acpi_table::AcpiTable;
 
+use uefi::{CStr16};
+use uefi::table::runtime::VariableAttributes;
+
 mod acpi;
 use acpi::*;
 
@@ -32,6 +35,14 @@ const MY_CONFIGURATION_TABLE_GUID: uefi::Guid = uefi::Guid::from_values(
 
 const MY_TABLE_SIGNATURE: u32 = 0xFEEDDEAD;
 const MY_TABLE_REVISION: u8 = 1;
+
+const MY_VENDOR_GUID: uefi::Guid = uefi::Guid::from_values(
+    0xf08ae394,
+    0x4e98,
+    0x46e6,
+    0xb0b3,
+    [0x1b, 0xb9, 0x40, 0xac, 0x66, 0x3d]
+);
 
 #[repr(C, packed)]
 struct MyAcpiTable {
@@ -628,6 +639,28 @@ fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> uefi::Status {
         .map_err(inspect("install_my_acpi_table"))
         .ignore_warning()?;
     info!("table_key: {:?}", table_key);
+
+    let rt = unsafe {
+        uefi_services::system_table()
+            .as_ref()
+            .runtime_services()
+    };
+
+    let buffer = &mut [0u16; 256];
+    rt.set_variable(
+        CStr16::from_str_with_buf("BpbAddress", buffer).ok().unwrap(),
+        &MY_VENDOR_GUID,
+        VariableAttributes::RUNTIME_ACCESS | VariableAttributes::BOOTSERVICE_ACCESS,
+        &phys_addr.to_le_bytes())
+        .map_err(inspect("set_variable"));
+
+    let system_table_addr = &system_table as *const _ as u64;
+    rt.set_variable(
+        CStr16::from_str_with_buf("SystemTable", buffer).ok().unwrap(),
+        &MY_VENDOR_GUID,
+        VariableAttributes::RUNTIME_ACCESS | VariableAttributes::BOOTSERVICE_ACCESS,
+        &system_table_addr.to_le_bytes())
+        .map_err(inspect("set_variable"));
 
     info!("bpb_main -- ok");
     uefi::Status::SUCCESS

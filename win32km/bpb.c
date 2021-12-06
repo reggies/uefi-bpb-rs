@@ -91,16 +91,16 @@ MyUnload (
 
 BOOLEAN
 CheckMyPage (
-    VOID
+    ULONGLONG PhysicalAddress
     )
 {
     PVOID SystemAddress;
     ULONG ProbeBytes;
 	PHYSICAL_ADDRESS liPhysicalAddress;
 
-    DbgPrint("CheckMyPage");
+    DbgPrint("CheckMyPage: %p", (void *)PhysicalAddress);
 
-	liPhysicalAddress.QuadPart = MY_PHYS_ADDRESS;
+	liPhysicalAddress.QuadPart = PhysicalAddress;
 
     SystemAddress = MmMapIoSpace (
         liPhysicalAddress,
@@ -124,6 +124,39 @@ CheckMyPage (
         );
 
     return 0xFEADDEAD == ProbeBytes;
+}
+
+BOOLEAN
+CheckRuntimeVarsPage (
+    VOID
+    )
+{
+    NTSTATUS Status;
+    UNICODE_STRING VariableName;
+    UCHAR Data[8];
+    ULONG DataSize = ARRAYSIZE(Data);
+    ULONGLONG PhysicalAddress;
+
+    DbgPrint("CheckRuntimeVarsPage");
+
+    RtlInitUnicodeString(&VariableName, TEXT("BpbAddress"));
+
+    Status = ExGetFirmwareEnvironmentVariable(
+        &VariableName,
+        &GUID_MY_VENDOR,
+        Data,
+        &DataSize,
+        NULL
+        );
+    if (NT_ERROR(Status))
+    {
+        DbgPrint("ExGetFirmwareEnvironmentVariable returned %08x", Status);
+        return FALSE;
+    }
+
+    RtlCopyMemory(&PhysicalAddress, Data, sizeof(ULONGLONG));
+
+    return CheckMyPage(PhysicalAddress);
 }
 
 NTSTATUS
@@ -177,7 +210,7 @@ TryLegacyDeviceDetection (
     CM_PARTIAL_RESOURCE_DESCRIPTOR ResourceDescriptor;
     BOOLEAN fPageDetected;
     PDEVICE_OBJECT DeviceObject;
-    
+
     // For IoReportResourceForDetection we must report
     // untranslated resource list
     RtlZeroMemory(&ResourceDescriptor, sizeof(CM_PARTIAL_RESOURCE_DESCRIPTOR));
@@ -215,7 +248,7 @@ TryLegacyDeviceDetection (
         return Status;
     }
 
-    fPageDetected = CheckMyPage();
+    fPageDetected = CheckMyPage(MY_PHYS_ADDRESS);
 
     DeviceObject = NULL;
 
@@ -263,7 +296,9 @@ DriverEntry (
     DriverObject->DriverUnload = MyUnload;
     // DriverObject->DriverExtension->AddDevice = MyAddDevice;
 
-    CheckMyPage();
+    CheckMyPage(MY_PHYS_ADDRESS);
+
+    CheckRuntimeVarsPage();
 
     TryLegacyDeviceDetection(DriverObject);
 
