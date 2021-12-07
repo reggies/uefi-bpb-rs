@@ -1,4 +1,5 @@
 #include <ntddk.h>
+#include <initguid.h>
 
 #include "bpb.h"
 
@@ -136,14 +137,15 @@ CheckRuntimeVarsPage (
     UCHAR Data[8];
     ULONG DataSize = ARRAYSIZE(Data);
     ULONGLONG PhysicalAddress;
+	GUID MyVendorGuid = GUID_MY_VENDOR;
 
     DbgPrint("CheckRuntimeVarsPage");
 
-    RtlInitUnicodeString(&VariableName, TEXT("BpbAddress"));
+    RtlInitUnicodeString(&VariableName, L"BpbAddress");
 
     Status = ExGetFirmwareEnvironmentVariable(
         &VariableName,
-        &GUID_MY_VENDOR,
+        &MyVendorGuid,
         Data,
         &DataSize,
         NULL
