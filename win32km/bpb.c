@@ -19,7 +19,7 @@ MyDispatchPnp (
 	UNREFERENCED_PARAMETER(Irp);
 	UNREFERENCED_PARAMETER(DeviceObject);
 
-    DbgPrint("MyDispatchPnp" );
+    MyDbgPrint("MyDispatchPnp" );
 
     return STATUS_SUCCESS;
 }
@@ -34,7 +34,7 @@ MyAddDevice (
     PDEVICE_OBJECT DeviceObject;
     PDEVICE_OBJECT TopOfTheStack;
 
-    DbgPrint("MyAddDevice");
+    MyDbgPrint("MyAddDevice");
 
     Status = IoCreateDevice(
         DriverObject,
@@ -74,7 +74,7 @@ MyDispatchPassThrough (
     IN PIRP Irp
     )
 {
-    DbgPrint("MyDispatchPassThrough");
+    MyDbgPrint("MyDispatchPassThrough");
 
     IoSkipCurrentIrpStackLocation (Irp);
     return IoCallDriver (DeviceObject, Irp);
@@ -87,7 +87,7 @@ MyUnload (
 {
 	UNREFERENCED_PARAMETER(DriverObject);
 
-    DbgPrint("MyUnload");
+    MyDbgPrint("MyUnload");
 }
 
 BOOLEAN
@@ -99,7 +99,7 @@ CheckMyPage (
     ULONG ProbeBytes;
 	PHYSICAL_ADDRESS liPhysicalAddress;
 
-    DbgPrint("CheckMyPage: %p", (void *)PhysicalAddress);
+    MyDbgPrint("CheckMyPage: %p", (void *)PhysicalAddress);
 
 	liPhysicalAddress.QuadPart = PhysicalAddress;
 
@@ -111,13 +111,13 @@ CheckMyPage (
 
     if (!SystemAddress)
     {
-        DbgPrint("MmMapIoSpace returned NULL");
+        MyDbgPrint("MmMapIoSpace returned NULL");
         return FALSE;
     }
 
     RtlCopyMemory(&ProbeBytes, SystemAddress, sizeof(ULONG));
 
-    DbgPrint("Probe bytes: %08x", ProbeBytes);
+    MyDbgPrint("Probe bytes: %08x", ProbeBytes);
 
     MmUnmapIoSpace (
         SystemAddress,
@@ -139,7 +139,7 @@ CheckRuntimeVarsPage (
     ULONGLONG PhysicalAddress;
 	GUID MyVendorGuid = GUID_MY_VENDOR;
 
-    DbgPrint("CheckRuntimeVarsPage");
+    MyDbgPrint("CheckRuntimeVarsPage");
 
     RtlInitUnicodeString(&VariableName, L"BpbAddress");
 
@@ -152,7 +152,7 @@ CheckRuntimeVarsPage (
         );
     if (NT_ERROR(Status))
     {
-        DbgPrint("ExGetFirmwareEnvironmentVariable returned %08x", Status);
+        MyDbgPrint("ExGetFirmwareEnvironmentVariable returned %08x", Status);
         return FALSE;
     }
 
@@ -244,9 +244,9 @@ TryLegacyDeviceDetection (
     {
         if (STATUS_CONFLICTING_ADDRESSES == Status)
         {
-            DbgPrint("ConflictDetected: %d", fConflictDetected);
+            MyDbgPrint("ConflictDetected: %d", fConflictDetected);
         }
-        DbgPrint("IoReportResourceForDetection returned %08x", Status);
+        MyDbgPrint("IoReportResourceForDetection returned %08x", Status);
         return Status;
     }
 
@@ -266,11 +266,11 @@ TryLegacyDeviceDetection (
         );
     if (NT_ERROR(Status))
     {
-        DbgPrint("IoReportDetectedDevice returned %08x", Status);
+        MyDbgPrint("IoReportDetectedDevice returned %08x", Status);
         return Status;
     }
 
-    DbgPrint("Detected DeviceObject is %p", DeviceObject);
+    MyDbgPrint("Detected DeviceObject is %p", DeviceObject);
 
     IoDeleteDevice(DeviceObject);
 
@@ -287,7 +287,7 @@ DriverEntry (
 
     UNREFERENCED_PARAMETER(RegistryPath);
 
-    DbgPrint("DriverEntry");
+    MyDbgPrint("DriverEntry");
 
     for (Index = 0; Index < IRP_MJ_MAXIMUM_FUNCTION; Index++)
     {
@@ -298,9 +298,14 @@ DriverEntry (
     DriverObject->DriverUnload = MyUnload;
     // DriverObject->DriverExtension->AddDevice = MyAddDevice;
 
-    CheckMyPage(MY_PHYS_ADDRESS);
+	// CheckMyPage(MY_PHYS_ADDRESS);
 
-    CheckRuntimeVarsPage();
+	CheckRuntimeVarsPage();
+
+	for (Index = 0; Index < (1024*1024)/0x1000; Index++)
+	{
+		CheckMyPage(0x1000 * Index);
+	}
 
     TryLegacyDeviceDetection(DriverObject);
 
