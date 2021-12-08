@@ -584,6 +584,55 @@ fn install_my_acpi_table(phys_addr: u64) -> uefi::Result<usize> {
     Ok(0.into())
 }
 
+fn allocate_mmio_page() -> uefi::Result<u64> {
+    let bs = unsafe {
+        uefi_services::system_table()
+            .as_ref()
+            .boot_services()
+    };
+
+    for n in 0..256 {
+        let pages_type = AllocateType::Address (4096 * n);
+        let pages_pool = MemoryType::MMIO;
+        let pages_count = PAGE_COUNT;
+        let result = bs.allocate_pages(pages_type, pages_pool, pages_count)
+            .map_err(inspect("allocate_pages"))
+            .ignore_warning();
+        match result {
+            Ok(mmio_addr) => {
+                info!("allocate_mmio_page {:#x} -> SUCCESS", mmio_addr);
+                return Ok(mmio_addr.into())
+            },
+            Err(error) => {
+                info!("allocate_mmio_page {:#x} -> {:?}", 4096*n, error.status());
+            },
+        }
+    }
+    Err(uefi::Status::NOT_FOUND.into())
+}
+
+fn allocate_mmio_pages() -> uefi::Result {
+    let bs = unsafe {
+        uefi_services::system_table()
+            .as_ref()
+            .boot_services()
+    };
+
+    for n in 0..256 {
+        let pages_type = AllocateType::Address (4096 * n);
+        let pages_pool = MemoryType::MMIO;
+        let pages_count = PAGE_COUNT;
+        let result = bs.allocate_pages(pages_type, pages_pool, pages_count)
+            .map_err(inspect("allocate_pages"))
+            .ignore_warning();
+        match result {
+            Ok(addr) => info!("allocate_mmio_pages {:#x} -> SUCCESS", addr),
+            Err(error) => info!("allocate_mmio_pages {:#x} -> {:?}", 4096*n, error.status()),
+        }
+    }
+    Ok(().into())
+}
+
 #[entry]
 fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> uefi::Status {
     uefi_services::init(&system_table)
@@ -596,6 +645,15 @@ fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> uefi::Status {
     };
 
     enum_acpi_table_protocols()?;
+
+    let mmio_addr = allocate_mmio_page()
+        .ignore_warning()
+        .map_err(inspect("allocate_mmio_page"))?;
+    info!("mmio_addr: {:#x}", mmio_addr);
+
+    allocate_mmio_pages()
+        .ignore_warning()
+        .map_err(inspect("allocate_mmio_pages"))?;
 
     let pages_type = AllocateType::AnyPages;
     let pages_pool = MemoryType::RUNTIME_SERVICES_DATA;
