@@ -148,9 +148,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bpb.c" />
+    <ClCompile Include="e820.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bpb.h" />
+    <ClInclude Include="e820.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

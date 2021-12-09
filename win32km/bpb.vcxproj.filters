@@ -27,9 +27,15 @@
     <ClCompile Include="bpb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="e820.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bpb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="e820.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

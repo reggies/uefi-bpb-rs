@@ -1,7 +1,15 @@
+// - [X] RuntimeServicesData + BpbAddress var to locate buffer; MmMapIoSpace to map the buffer
+//   - works
+// - [X] Mmio + x86ReadMemory
+//   - does not work on x64
+// 3. RuntimeServicesData + ACPI table; PNP dispatch to locate buffer and MmMapIoSpace to map
+// 4. SMM driver + ???; ???
+
 #include <ntddk.h>
 #include <initguid.h>
 
 #include "bpb.h"
+#include "e820.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
@@ -313,10 +321,23 @@ DriverEntry (
     )
 {
     ULONG Index;
+	NTSTATUS Status;
 
     UNREFERENCED_PARAMETER(RegistryPath);
 
     MyDbgPrint("DriverEntry");
+
+	Status = PrintE820Map();
+	if (NT_ERROR(Status))
+	{
+		MyDbgPrint("PrintMap returned %08x", Status);
+	}
+
+	Status = ScanX86BiosMemory();
+	if (NT_ERROR(Status))
+	{
+		MyDbgPrint("ScanX86BiosMemory returned %08x", Status);
+	}
 
     for (Index = 0; Index < IRP_MJ_MAXIMUM_FUNCTION; Index++)
     {
