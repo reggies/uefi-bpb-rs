@@ -107,7 +107,7 @@ CheckMyPage (
     ULONG ProbeBytes;
 	PHYSICAL_ADDRESS liPhysicalAddress;
 
-    MyDbgPrint("CheckMyPage: %p", (void *)PhysicalAddress);
+    MyDbgPrint("CheckMyPage: %p", (void *)(ULONG)PhysicalAddress);
 
 	liPhysicalAddress.QuadPart = PhysicalAddress;
 
