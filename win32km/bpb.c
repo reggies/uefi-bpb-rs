@@ -351,11 +351,11 @@ DriverEntry (
 	// CheckMyPage(MY_PHYS_ADDRESS);
 
 	CheckRuntimeVarsPage();
-
+/*
 	for (Index = 0; Index < (1024*1024)/0x1000; Index++)
 	{
 		CheckMyPage(0x1000 * Index);
-	}
+	}*/
 
     TryLegacyDeviceDetection(DriverObject);
 
