@@ -1,7 +1,4 @@
-#ifndef BPB_H_
-#define BPB_H_
-
-#define MY_PHYS_ADDRESS 0x1000000
+#pragma once
 
 DRIVER_INITIALIZE DriverEntry;
 
@@ -24,5 +21,3 @@ CheckMyPage (
 DEFINE_GUID(GUID_MY_VENDOR, 0xf08ae394, 0x4e98, 0x46e6, 0xb0, 0xb3, 0x1b, 0xb9, 0x40, 0xac, 0x66, 0x3d);
 
 #define MyDbgPrint(STR, ...) DbgPrint("bpb: " STR, __VA_ARGS__)
-
-#endif

@@ -127,36 +127,55 @@ CheckMyPage (
     return 0xFEADDEAD == ProbeBytes;
 }
 
+NTSTATUS
+GetRuntimeVarBpbAddress(
+	PULONGLONG BpbAddress
+)
+{
+	NTSTATUS Status;
+	UNICODE_STRING VariableName;
+	UCHAR Data[8];
+	ULONG DataSize = ARRAYSIZE(Data);
+	GUID MyVendorGuid = GUID_MY_VENDOR;
+
+	MyDbgPrint("GetRuntimeVarBpbAddress");
+
+	RtlInitUnicodeString(&VariableName, L"BpbAddress");
+
+	Status = ExGetFirmwareEnvironmentVariable(
+		&VariableName,
+		&MyVendorGuid,
+		Data,
+		&DataSize,
+		NULL
+	);
+	if (NT_ERROR(Status))
+	{
+		MyDbgPrint("ExGetFirmwareEnvironmentVariable returned %08x", Status);
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	RtlCopyMemory(BpbAddress, Data, sizeof(ULONGLONG));
+
+	return STATUS_SUCCESS;
+}
+
 BOOLEAN
 CheckRuntimeVarsPage (
     VOID
     )
 {
     NTSTATUS Status;
-    UNICODE_STRING VariableName;
-    UCHAR Data[8];
-    ULONG DataSize = ARRAYSIZE(Data);
     ULONGLONG PhysicalAddress;
-	GUID MyVendorGuid = GUID_MY_VENDOR;
 
     MyDbgPrint("CheckRuntimeVarsPage");
 
-    RtlInitUnicodeString(&VariableName, L"BpbAddress");
-
-    Status = ExGetFirmwareEnvironmentVariable(
-        &VariableName,
-        &MyVendorGuid,
-        Data,
-        &DataSize,
-        NULL
-        );
-    if (NT_ERROR(Status))
-    {
-        MyDbgPrint("ExGetFirmwareEnvironmentVariable returned %08x", Status);
-        return FALSE;
-    }
-
-    RtlCopyMemory(&PhysicalAddress, Data, sizeof(ULONGLONG));
+	Status = GetRuntimeVarBpbAddress(&PhysicalAddress);
+	if (NT_ERROR(Status))
+	{
+		MyDbgPrint("GetRuntimeVarBpbAddress returned %08x", Status);
+		return FALSE;
+	}
 
     return CheckMyPage(PhysicalAddress);
 }
@@ -212,6 +231,16 @@ TryLegacyDeviceDetection (
     CM_PARTIAL_RESOURCE_DESCRIPTOR ResourceDescriptor;
     BOOLEAN fPageDetected;
     PDEVICE_OBJECT DeviceObject;
+	ULONGLONG PhysicalAddress;
+
+	MyDbgPrint("TryLegacyDeviceDetection");
+
+	Status = GetRuntimeVarBpbAddress(&PhysicalAddress);
+	if (NT_ERROR(Status))
+	{
+		MyDbgPrint("GetRuntmeVarBpbAddress returned %08x", Status);
+		return Status;
+	}
 
     // For IoReportResourceForDetection we must report
     // untranslated resource list
@@ -219,7 +248,7 @@ TryLegacyDeviceDetection (
     ResourceDescriptor.Type = CmResourceTypeMemory;
     ResourceDescriptor.ShareDisposition = CmResourceShareDeviceExclusive;
     ResourceDescriptor.Flags = CM_RESOURCE_MEMORY_READ_WRITE;
-    ResourceDescriptor.u.Memory.Start.QuadPart = MY_PHYS_ADDRESS;
+    ResourceDescriptor.u.Memory.Start.QuadPart = PhysicalAddress;
     ResourceDescriptor.u.Memory.Length = 4096;
 
     RtlZeroMemory(&ResourceList, sizeof(CM_RESOURCE_LIST));
@@ -250,7 +279,7 @@ TryLegacyDeviceDetection (
         return Status;
     }
 
-    fPageDetected = CheckMyPage(MY_PHYS_ADDRESS);
+    fPageDetected = CheckMyPage(PhysicalAddress);
 
     DeviceObject = NULL;
 
