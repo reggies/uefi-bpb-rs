@@ -1,0 +1,7 @@
+#pragma once
+
+EVT_WDF_DEVICE_PREPARE_HARDWARE  OnPrepareHardware;
+EVT_WDF_DEVICE_RELEASE_HARDWARE  OnReleaseHardware;
+EVT_WDF_DEVICE_D0_ENTRY          OnD0Entry;
+EVT_WDF_DEVICE_D0_EXIT           OnD0Exit;
+EVT_WDF_REQUEST_CANCEL           OnCancel;

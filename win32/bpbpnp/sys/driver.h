@@ -1,0 +1,6 @@
+#pragma once
+
+DRIVER_INITIALIZE DriverEntry;
+
+EVT_WDF_DRIVER_DEVICE_ADD       OnDeviceAdd;
+EVT_WDF_OBJECT_CONTEXT_CLEANUP  OnDriverCleanup;

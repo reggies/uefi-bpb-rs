@@ -1,0 +1,46 @@
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = System
+ClassGuid   = {4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider    = %ProviderString%
+DriverVer   = 02/22/2016,00.00.00.000
+CatalogFile = Bpbpnp.cat
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[SourceDisksNames]
+1 = %DiskId1%,,,""
+
+[SourceDisksFiles]
+bpbpnp.sys = 1,,
+
+[Manufacturer]
+%StdMfg% = Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%bpbpnp.DeviceDesc% = bpbpnp_Device,ACPI\BPB0001
+
+[bpbpnp_Device.NT]
+CopyFiles = Drivers_Dir
+
+[Drivers_Dir]
+bpbpnp.sys
+
+[bpbpnp_Device.NT.Services]
+AddService = bpbpnp,%SPSVCINST_ASSOCSERVICE%,bpbpnp_Service_Inst
+
+[bpbpnp_Service_Inst]
+DisplayName    = %bpbpnp.SvcDesc%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\bpbpnp.sys
+
+[Strings]
+SPSVCINST_ASSOCSERVICE = 0x00000002
+ProviderString = "reggies"
+StdMfg = "(Standard system devices)"
+DiskId1 = "BPB via PnP Installation Disk #1"
+bpbpnp.DeviceDesc = "Boot Param Block Fake Device"
+bpbpnp.SvcDesc = "Boot Param Block Service"
