@@ -1,0 +1,20 @@
+- [X] allocate pages in RuntimeServiceData pool as UEFI driver
+- [ ] run EFI_RUNTIME_DXE driver and allocate MMIO pages
+  - [ ] then what? how to process memory reads/writes?
+- [ ] make SMM driver that processes SmmDriverOrder
+- [ ] make SMM drivers that is able to monitor other SMM drivers
+- [ ] vendor-defined ACPI tables to locate BPB address
+  - extending/overriding DSDT is possible in both linux and windows
+  - [X] EFI loader installs SSDT with patched AML
+  - [ ] EFI loader installs BPBT and SSDT which refers to BPBT
+  - [ ] EFI loader installs BPBT but SSDT is pulled from win32 registry
+- [ ] probe address in wdm driver
+  - [X] just use MmIoMapSpace
+  - [X] use IoReportResourceForDetection/IoReportDetectedDevice
+    - does not work
+      - because any address reported by WDM driver conflicts
+        with EFI memory map regions (including our own)
+  - [ ] use IoReportRootDevice
+    - dispatch IRP_MN_START_DEVICE and IRP_QUERY_RESOURCE_REQUIREMENTS
+- [ ] access EFI system table in windows
+  - [ ] reading configuration tables in windows

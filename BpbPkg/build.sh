@@ -2,11 +2,6 @@
 
 set -e
 
-# rustup install nightly
-# rustup component add build-std
-# rustup default nightly
-cargo build -Z patch-in-config -Z build-std --target x86_64-unknown-uefi
-
 FILE=$(readlink -f $0)
 FILEPATH=`dirname $FILE`
 
@@ -19,7 +14,15 @@ source $WORKSPACE/edksetup.sh
 build \
     -t GCC5 \
     -b DEBUG \
-    -p BpbPkg/BpbPkg.dsc \
-    -m BpbPkg/BpbDxe/BpbDxe.inf \
+    -p BpbPkg.dsc \
+    -m RuntimeSpyDxe/RuntimeSpyDxe.inf \
+    -a X64 \
+    -n 8
+
+build \
+    -t GCC5 \
+    -b DEBUG \
+    -p BpbPkg.dsc \
+    -m BpbDxe/BpbDxe.inf \
     -a X64 \
     -n 8
